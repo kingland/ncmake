@@ -1,0 +1,40 @@
+{
+  "name": "ncmake",
+  "version": "1.2.0",
+  "description": "node.js toolchain for cmake",
+  "keywords": [
+    "build",
+    "cmake",
+    "gyp"
+  ],
+  "license": "MIT",
+  "author": "Sarayu Nhookeaw (sarayu.noo@gmail.com)",
+  "main": "./lib/cmake.js",
+  "bin": {
+    "cmake-node": "./bin/cmake-node"
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.prod.json",
+    "lint": "eslint bin/cmake-node lib/ || exit 0"
+  },
+  "dependencies": {
+    "axios": "^1.3.2",   
+    "fs-extra": "^10.1.0",   
+    "tar": "^6.1.11",    
+    "which": "^2.0.2",
+    "yargs": "^17.6.0"
+  },
+  "devDependencies": {
+    "@types/debug": "^4.1.10",
+    "@types/fs-extra": "^11.0.3",
+    "@types/npmlog": "^4.1.5",
+    "@types/readable-stream": "^4.0.4",
+    "@types/tar": "^6.1.7",
+    "@types/which": "^3.0.1",
+	"typescript": "^5.0.4",
+	"npmlog": "^6.0.2",
+	"debug": "^4",
+    "readable-stream": "^4.4.2",
+    "url-join": "^5.0.0"
+  }
+}
