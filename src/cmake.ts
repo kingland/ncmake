@@ -6,6 +6,7 @@ import { Toolset } from "./toolset";
 import path from 'path';
 import fs from 'fs-extra';
 import which from "which";
+import { TargetOptions } from "./targetOptions";
 
 export class CMake {
     protected m_options : any;
@@ -18,6 +19,8 @@ export class CMake {
     protected m_isAvailable: boolean;
     protected m_toolset: Toolset;
     protected m_silent: boolean;
+    protected m_targetOptions: TargetOptions;
+    protected m_extraCMakeArgs: string[];
 
     get path() : string {
         return this.m_options.cmakePath || "cmake";
@@ -30,7 +33,7 @@ export class CMake {
         return this.m_isAvailable;
     }
     
-    constructor(options: any){
+    constructor(options: any | null){
         this.m_options = options || {};
     }
 
@@ -44,7 +47,7 @@ export class CMake {
         }
     }
 
-    public async getConfigureCommand(): Promise<string[]> {
+    private async getConfigureCommand(): Promise<string[]> {
 
         // Create command:
         let command = [this.m_path, this.m_projectRoot, "--no-warn-unused-cli"];
@@ -94,14 +97,14 @@ export class CMake {
         }
     
         // Custom options
-        for (const [key, value] of Object.entries(this.cMakeOptions)) {
+        /*for (const [key, value] of Object.entries(this.cMakeOptions)) {
             D.push({ [key]: value });
-        }
+        }*/
     
         // Toolset:
-        await this.m_toolset.initialize(false);
+        await this.m_toolset.initialize(); //false
     
-        const libsString = this.getCmakeJsLibString()
+        /*const libsString = this.getCmakeJsLibString()
         D.push({ "CMAKE_JS_LIB": libsString });
     
         if (Environment.isWin) {
@@ -111,7 +114,7 @@ export class CMake {
                 D.push({ CMAKE_JS_NODELIB_DEF: nodeLibDefPath })
                 D.push({ CMAKE_JS_NODELIB_TARGET: nodeLibPath })
             }
-        }
+        }*/
     
         if (this.m_toolset.generator) {
             command.push("-G", this.m_toolset.generator);
@@ -139,21 +142,21 @@ export class CMake {
         }
     
         // Load NPM config
-        for (const [key, value] of Object.entries(npmConfigData)) {
+        /*for (const [key, value] of Object.entries(npmConfigData)) {
             if (key.startsWith("cmake_")) {
                 const sk = key.substr(6);
                 if (sk && value) {
                     D.push({ [sk]: value });
                 }
             }
-        }
+        }*/
     
         command = command.concat(D.map( (p) => "-D" + Object.keys(p)[0] + "=" + Object.values(p)[0] ));
     
-        return command.concat(this.extraCMakeArgs);
+        return command.concat(this.m_extraCMakeArgs);
     }
 
-    public getCmakeJsLibString() {
+    /*private getCmakeJsLibString() {
 
         const libs: string[] = [];
         if (Environment.isWin) {
@@ -165,9 +168,9 @@ export class CMake {
             }
         }
         return libs.join(";");
-    }
+    }*/
 
-    public async getCmakeJsIncludeString() : Promise<any> {
+    /*public async getCmakeJsIncludeString() : Promise<any> {
         let incPaths: any[] = [];
         if (!this.m_options.isNodeApi) {
             // Include and lib:
@@ -201,7 +204,7 @@ export class CMake {
         return incPaths.join(";");
     }
 
-    public getCmakeJsSrcString() {
+    private getCmakeJsSrcString() {
         const srcPaths: string[] = [];
         if (Environment.isWin) {
             const delayHook = path.normalize(path.join(__dirname, 'cpp', 'win_delay_load_hook.cc'));
@@ -212,9 +215,9 @@ export class CMake {
         return srcPaths.join(";");
     }
 
-    public getNodeLibDefPath () {
+    private getNodeLibDefPath () {
         return Environment.isWin && this.m_options.isNodeApi ? path.join(this.m_options.out, 'node-lib.def') : undefined
-    }
+    }*/
 
     public async configure() : Promise<any> {
         this.verifyIfAvailable();
@@ -240,11 +243,11 @@ export class CMake {
         const cwd = process.cwd();
         process.chdir(this.m_workDir);
         try {
-            const nodeLibDefPath = this.getNodeLibDefPath()
+            /*const nodeLibDefPath = this.getNodeLibDefPath()
     
-            if (Environment.isWin && nodeLibDefPath) {
-                await this.generateNodeLibDef(nodeLibDefPath)
-            }
+           if (Environment.isWin && nodeLibDefPath) {
+                await this.generateNodeLibDef(nodeLibDefPath);
+            }*/
     
             await this.run(command);
         }
@@ -270,7 +273,7 @@ export class CMake {
         if (this.m_options.parallel) {
             command.push("--parallel", this.m_options.parallel);
         }
-        return command.concat(this.extraCMakeArgs);
+        return command.concat(this.m_extraCMakeArgs);
     }
 
     public async build(){
@@ -283,7 +286,7 @@ export class CMake {
     }
 
     private getCleanCommand() {
-        return [this.path, "-E", "remove_directory", this.m_workDir].concat(this.extraCMakeArgs);
+        return [this.path, "-E", "remove_directory", this.m_workDir].concat(this.m_extraCMakeArgs);
     }
     
     public clean() {
@@ -294,19 +297,19 @@ export class CMake {
     }
 
     public async reconfigure() {
-        this.extraCMakeArgs = [];
+        this.m_extraCMakeArgs = [];
         await this.clean();
         await this.configure();
     }
 
     public async rebuild() {
-        this.extraCMakeArgs = [];
+        this.m_extraCMakeArgs = [];
         await this.clean();
         await this.build();
     }
 
     public async compile() {
-        this.extraCMakeArgs = [];
+        this.m_extraCMakeArgs = [];
         try {
             await this.build();
         }
@@ -316,12 +319,12 @@ export class CMake {
         }
     }
 
-    private run(command: any) {
+    private run(command: any): Promise<any> {
         this.m_log.info("RUN", command);
         return ProcessUtils.run(command, {silent: this.m_silent});
-    };
+    }
 
-    private async generateNodeLibDef(targetFile: string) {
+    /*private async generateNodeLibDef(targetFile: string) {
         try {
             // Compile a Set of all the symbols that could be exported
             const allSymbols = new Set<any>()
@@ -343,7 +346,7 @@ export class CMake {
             // It most likely wasn't found
             throw new Error(`Failed to generate def for node.lib`)
         }
-    }
+    }*/
 
     static isAvailable(options: any) : boolean {
         options = options || {};

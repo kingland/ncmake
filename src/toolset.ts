@@ -13,8 +13,9 @@ export class Toolset {
     protected m_log : Log;
     private m_initialized: boolean;
 
-    protected m_cCompilerPath: string;
-    protected m_cppCompilerPath: string;
+    protected m_cCompilerPath: string | null;
+    protected m_cppCompilerPath: string | null;
+    protected m_makePath: string | null;
     protected m_compilerFlags: string[];
     protected m_linkerFlags: string[];
 
@@ -26,25 +27,54 @@ export class Toolset {
         this.m_initialized = false;
         this.m_cCompilerPath = options.cCompilerPath;
         this.m_cppCompilerPath = options.cppCompilerPath;
+        this.m_makePath = options.makePath;
         this.m_compilerFlags = options.compilerFlags || [];
-        this.m_linkerFlags = options.linkerFlags || [];
+        this.m_linkerFlags = options.linkerFlags || [];        
         this.m_platform = null;
         this.m_generator = null;
     }
 
-    public async initialize(install: boolean) {
+    public get generator(){
+        return this.m_generator;
+    }
+
+    public get platform(){
+        return this.m_platform;
+    }   
+
+    public get cppCompilerPath(){
+        return this.m_cppCompilerPath;
+    }
+
+    public get cCompilerPath(){
+        return this.m_cCompilerPath;
+    }
+
+    public get compilerFlags(){
+        return this.m_compilerFlags;
+    }
+
+    public get linkerFlags(){
+        return this.m_linkerFlags;
+    }
+
+    public get makePath(){
+        return this.m_makePath;
+    }
+
+    public async initialize() { //install: boolean
         if (!this.m_initialized) {
             if (Environment.isWin) {
-                await this.initializeWin(install);
+                await this.initializeWin(); //
             }
             else {
-                this.initializePosix(install);
+                this.initializePosix(); //
             }
             this.m_initialized = true;
         }
     }
 
-    public async initializePosix(install: boolean) {
+    public async initializePosix() { //install: boolean
         if (!this.m_cCompilerPath || !this.m_cppCompilerPath) {
             // 1: Compiler
             if (!Environment.isGPPAvailable && !Environment.isClangAvailable) {
@@ -57,80 +87,90 @@ export class Toolset {
             }
     
             if (this.m_options.preferClang && Environment.isClangAvailable) {
-                if (install) {
+                /*if (install) {
                     this.m_log.info("TOOL", "Using clang++ compiler, because preferClang option is set, and clang++ is available.");
-                }
+                }*/
+                this.m_log.info("TOOL", "Using clang++ compiler, because preferClang option is set, and clang++ is available.");
                 this.m_cppCompilerPath = this.m_cppCompilerPath || "clang++";
                 this.m_cCompilerPath = this.m_cCompilerPath || "clang";
             }
             else if (this.m_options.preferGnu && Environment.isGPPAvailable) {
-                if (install) {
+                /*if (install) {
                     this.m_log.info("TOOL", "Using g++ compiler, because preferGnu option is set, and g++ is available.");
-                }
+                }*/
+                this.m_log.info("TOOL", "Using g++ compiler, because preferGnu option is set, and g++ is available.");
                 this.m_cppCompilerPath = this.m_cppCompilerPath || "g++";
                 this.m_cCompilerPath = this.m_cCompilerPath || "gcc";
             }
         }
         // if it's already set because of options...
         if (this.m_generator) {
-            if (install) {
+            /*if (install) {
                 this.m_log.info("TOOL", "Using " + this.m_generator + " generator, as specified from commandline.");
-            }
+            }*/
+            this.m_log.info("TOOL", "Using " + this.m_generator + " generator, as specified from commandline.");
         }
         // 2: Generator
         else if (Environment.isOSX) {
             if (this.m_options.preferXcode) {
-                if (install) {
+                /*if (install) {
                     this.m_log.info("TOOL", "Using Xcode generator, because preferXcode option is set.");
-                }
+                }*/
+                this.m_log.info("TOOL", "Using Xcode generator, because preferXcode option is set.");
                 this.m_generator = "Xcode";
             }
             else if (this.m_options.preferMake && Environment.isMakeAvailable) {
-                if (install) {
+                /*if (install) {
                     this.m_log.info("TOOL", "Using Unix Makefiles generator, because preferMake option is set, and make is available.");
-                }
+                }*/
+                this.m_log.info("TOOL", "Using Unix Makefiles generator, because preferMake option is set, and make is available.");
                 this.m_generator = "Unix Makefiles";
             }
             else if (Environment.isNinjaAvailable) {
-                if (install) {
+                /*if (install) {
                     this.m_log.info("TOOL", "Using Ninja generator, because ninja is available.");
-                }
+                }*/
+                this.m_log.info("TOOL", "Using Ninja generator, because ninja is available.");
                 this.m_generator = "Ninja";
             }
             else {
-                if (install) {
+                /*if (install) {
                     this.m_log.info("TOOL", "Using Unix Makefiles generator.");
-                }
+                }*/
+                this.m_log.info("TOOL", "Using Unix Makefiles generator.");
                 this.m_generator = "Unix Makefiles";
             }
         }
         else {
             if (this.m_options.preferMake && Environment.isMakeAvailable) {
-                if (install) {
+                /*if (install) {
                     this.m_log.info("TOOL", "Using Unix Makefiles generator, because preferMake option is set, and make is available.");
-                }
+                }*/
+                this.m_log.info("TOOL", "Using Unix Makefiles generator, because preferMake option is set, and make is available.");
                 this.m_generator = "Unix Makefiles";
             }
             else if (Environment.isNinjaAvailable) {
-                if (install) {
+                /*if (install) {
                     this.m_log.info("TOOL", "Using Ninja generator, because ninja is available.");
-                }
+                }*/
+                this.m_log.info("TOOL", "Using Ninja generator, because ninja is available.");
                 this.m_generator = "Ninja";
             }
             else {
-                if (install) {
+                /*if (install) {
                     this.m_log.info("TOOL", "Using Unix Makefiles generator.");
-                }
+                }*/
+                this.m_log.info("TOOL", "Using Unix Makefiles generator.");
                 this.m_generator = "Unix Makefiles";
             }
         }
     
         // 3: Flags
         if (Environment.isOSX) {
-            if (install) {
+            /*if (install) {
                 this.m_log.verbose("TOOL", "Setting default OSX compiler flags.");
-            }
-    
+            }*/
+            this.m_log.verbose("TOOL", "Setting default OSX compiler flags.");
             this.m_compilerFlags.push("-D_DARWIN_USE_64_BIT_INODE=1");
             this.m_compilerFlags.push("-D_LARGEFILE_SOURCE");
             this.m_compilerFlags.push("-D_FILE_OFFSET_BITS=64");
@@ -145,16 +185,16 @@ export class Toolset {
         }
     }
 
-    public async initializeWin(install: boolean) {
+    public async initializeWin() { //install: boolean
         const noGenerator = !this.m_generator;
         if (noGenerator) {
             const foundVsInfo = await this.getTopSupportedVisualStudioGenerator();
             if (foundVsInfo) {
-                if (install) {
+                /*if (install) {
                     this.m_log.info("TOOL", `Using ${foundVsInfo.generator} generator.`);
-                }
-                this.m_generator = foundVsInfo.generator;
-    
+                }*/
+                this.m_log.info("TOOL", `Using ${foundVsInfo.generator} generator.`);
+                this.m_generator = foundVsInfo.generator;    
                 const isAboveVS16 = foundVsInfo.versionMajor >= 16;
     
                 // The CMake Visual Studio Generator does not support the Win64 or ARM suffix on
@@ -185,17 +225,19 @@ export class Toolset {
             }
         } else {
             // if it's already set because of options...
-            if (install) {
+            /*if (install) {
                 this.m_log.info("TOOL", "Using " + this.m_options.generator + " generator, as specified from commandline.");
-            }
+            }*/
+            this.m_log.info("TOOL", "Using " + this.m_options.generator + " generator, as specified from commandline.");
         }
     
         this.m_linkerFlags.push("/DELAYLOAD:NODE.EXE");
     
         if (this.m_targetOptions.isX86) {
-            if (install) {
+            /*if (install) {
                 this.m_log.verbose("TOOL", "Setting SAFESEH:NO linker flag.");
-            }
+            }*/
+            this.m_log.verbose("TOOL", "Setting SAFESEH:NO linker flag.");
             this.m_linkerFlags.push("/SAFESEH:NO");
         }
     }
