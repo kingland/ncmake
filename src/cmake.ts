@@ -14,7 +14,7 @@ export class CMake {
     protected m_config: any;
     protected m_path: string;
     protected m_projectRoot: string;
-    protected m_workDir: string;
+    //protected m_workDir: string;
     protected m_buildDir: string;
     protected m_isAvailable: boolean;
     protected m_toolset: Toolset;
@@ -35,6 +35,7 @@ export class CMake {
     
     constructor(options: any | null){
         this.m_options = options || {};
+        this.m_isAvailable = false;
     }
 
     public getGenerators() {
@@ -60,7 +61,7 @@ export class CMake {
         // Build configuration:
         D.push({"CMAKE_BUILD_TYPE": this.m_config});
         
-        if (Environment.isWin) {
+        /*if (Environment.isWin) {
             D.push({"CMAKE_RUNTIME_OUTPUT_DIRECTORY": this.m_workDir});
         }
         else if (this.m_workDir.endsWith(this.m_config)) {
@@ -68,7 +69,7 @@ export class CMake {
         }
         else {
             D.push({"CMAKE_LIBRARY_OUTPUT_DIRECTORY": this.m_buildDir});
-        }
+        }*/
     
         // In some configurations MD builds will crash upon attempting to free memory.
         // This tries to encourage MT builds which are larger but less likely to have this crash.
@@ -234,14 +235,14 @@ export class CMake {
         }
     
         try {
-            await fs.ensureDir(this.m_workDir);
+            await fs.ensureDir(this.m_buildDir);
         }
         catch (e) {
             // Ignore
         }
     
         const cwd = process.cwd();
-        process.chdir(this.m_workDir);
+        process.chdir(this.m_buildDir);
         try {
             /*const nodeLibDefPath = this.getNodeLibDefPath()
     
@@ -258,7 +259,7 @@ export class CMake {
 
     public async ensureConfigured() : Promise<any>{
         try {
-            await fs.lstat(path.join(this.m_workDir, "CMakeCache.txt"));
+            await fs.lstat(path.join(this.m_buildDir, "CMakeCache.txt"));
         }
         catch (e) {
             await this.configure();
@@ -266,7 +267,7 @@ export class CMake {
     }
 
     private async getBuildCommand() : Promise<any>{
-        const command = [this.path, "--build", this.m_workDir, "--config", this.m_config];
+        const command = [this.path, "--build", this.m_buildDir, "--config", this.m_config];
         if (this.m_options.target) {
             command.push("--target", this.m_options.target);
         }
@@ -286,7 +287,7 @@ export class CMake {
     }
 
     private getCleanCommand() {
-        return [this.path, "-E", "remove_directory", this.m_workDir].concat(this.m_extraCMakeArgs);
+        return [this.path, "-E", "remove_directory", this.m_buildDir].concat(this.m_extraCMakeArgs);
     }
     
     public clean() {
@@ -396,7 +397,7 @@ export class CMake {
                         (parts.length === 1 && i !== output.length - 1 && output[i + 1].trim()[0] === "=")) {
                         let gen = parts[0].trim();
                         if (gen.endsWith(arch)) {
-                            gen = gen.substr(0, gen.length - arch.length);
+                            gen = gen.substring(0, gen.length - arch.length);
                         }
                         gens.push(gen);
                     }

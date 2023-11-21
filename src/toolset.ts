@@ -195,12 +195,12 @@ export class Toolset {
                 }*/
                 this.m_log.info("TOOL", `Using ${foundVsInfo.generator} generator.`);
                 this.m_generator = foundVsInfo.generator;    
-                const isAboveVS16 = foundVsInfo.versionMajor >= 16;
+                //const isAboveVS16 = foundVsInfo.versionMajor >= 16;
     
                 // The CMake Visual Studio Generator does not support the Win64 or ARM suffix on
                 // the generator name. Instead the generator platform must be set explicitly via
                 // the platform parameter
-                if (!this.m_platform && isAboveVS16) {
+                if (!this.m_platform) { // && isAboveVS16
                     switch(this.m_targetOptions.arch) {
                         case "ia32":
                         case "x86":
@@ -251,22 +251,28 @@ export class Toolset {
     
         const list = await CMake.getGenerators(this.m_options, this.m_log);
         for (const gen of list) {
-            const found = gen.startsWith(`Visual Studio ${selectedVs.versionMajor}`)
+            //const found = gen.startsWith(`Visual Studio ${selectedVs.versionMajor}`)
+            const found = gen.startsWith(this.m_options.generator);
             if (!found) {
                 continue;
             }
     
             // unlike previous versions "Visual Studio 16 2019" and onwards don't end with arch name
-            const isAboveVS16 = selectedVs.versionMajor >= 16;
+            /*const isAboveVS16 = selectedVs.versionMajor >= 16;
             if (!isAboveVS16) {
                 const is64Bit = gen.endsWith("Win64");
                 if ((this.m_targetOptions.isX86 && is64Bit) || (this.m_targetOptions.isX64 && !is64Bit)) {
                     continue;
                 }
+            }*/
+
+            const is64Bit = gen.endsWith("Win64");
+            if ((this.m_targetOptions.isX86 && is64Bit) || (this.m_targetOptions.isX64 && !is64Bit)) {
+                continue;
             }
     
             return {
-                ...selectedVs,
+                //...selectedVs,
                 generator: gen
             }
         }
